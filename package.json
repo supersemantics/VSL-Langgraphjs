@@ -1,0 +1,47 @@
+{
+  "name": "@supersemantics/vsl-langgraph",
+  "version": "0.1.0",
+  "description": "LangGraph.js adapter for VSL (VERBA Specification Language) governance primitives -- TypeScript port of vsl-langgraph, implementing vsl-core's VSLAdapter conformance contract.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node scripts/mark-cjs-dist.mjs",
+    "prepare": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@supersemantics/vsl-core": "github:supersemantics/vsl-corejs",
+    "@langchain/langgraph": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.11"
+  },
+  "keywords": [
+    "governance",
+    "ai-safety",
+    "guardrails",
+    "langgraph",
+    "vsl",
+    "verba"
+  ]
+}
