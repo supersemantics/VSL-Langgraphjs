@@ -83,10 +83,18 @@ can't be silently assumed.
 
 Nothing in `gatedNode` calls `VerbaLedger.write*` -- a gate denial becomes a
 state update (`state[denialKey]`), and that's it. If you want an audit
-trail, your own node has to call `ledger.writeMonitor`/`writeVerification`/
-`write` explicitly. For persisting those writes to a durable, hosted ledger,
-see [`vsl-core-ledger-client`](https://github.com/supersemantics/VSL-Core-ledger-client)
-(Python) -- no TypeScript port of it exists yet.
+trail, your own node has to call
+`ledger.writeMonitor`/`ledger.write(LedgerEntryType.PRE_NODE, ...)`/
+`writeVerification` explicitly, causally linked via `causedBy` -- the same
+three entry types the Python `vsl-core` package's own [building
+guide](https://github.com/supersemantics/VSL-Core/blob/main/docs/building-with-vsl-core.md#step-3-the-five-things-youll-actually-write)
+says to write around every gated call (`vsl-corejs` has no separate guide
+of its own; the construct names and ledger contract are identical here).
+Skip `PRE_NODE` and `VerbaLedger.audit()`'s
+`drift_flagged_monitor_has_pre_node` check fails on any denial -- not a bug
+in `audit()`, just an incomplete write. For persisting those writes to a durable, hosted ledger,
+see [`@supersemantics/vsl-core-ledger-client`](https://github.com/supersemantics/VSL-Core-ledger-clientjs)
+(the TypeScript port of [`vsl-core-ledger-client`](https://github.com/supersemantics/VSL-Core-ledger-client)).
 
 ## Install
 
