@@ -92,9 +92,8 @@ says to write around every gated call (`vsl-corejs` has no separate guide
 of its own; the construct names and ledger contract are identical here).
 Skip `PRE_NODE` and `VerbaLedger.audit()`'s
 `drift_flagged_monitor_has_pre_node` check fails on any denial -- not a bug
-in `audit()`, just an incomplete write. For persisting those writes to a durable, hosted ledger,
-see [`@supersemantics/vsl-core-ledger-client`](https://github.com/supersemantics/VSL-Core-ledger-clientjs)
-(the TypeScript port of [`vsl-core-ledger-client`](https://github.com/supersemantics/VSL-Core-ledger-client)).
+in `audit()`, just an incomplete write. Where those writes are kept is up to you: `VerbaLedger`
+accepts any `LedgerStore`, and vsl-corejs includes `InMemoryLedgerStore` and `JsonlLedgerStore`.
 
 ## Install
 
