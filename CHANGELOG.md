@@ -2,7 +2,7 @@
 
 What changed in each release, and why. Newest first.
 
-## 0.1.1 (unreleased): vsl-corejs pinned to v0.2.0
+## 0.1.1 (2026-11-12, tag `v0.1.1`): vsl-corejs pinned to v0.2.0
 
 **Before:** `@supersemantics/vsl-core` came from `github:supersemantics/vsl-corejs` with no ref,
 so an install took whatever vsl-corejs's default branch was that day.
