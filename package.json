@@ -1,6 +1,6 @@
 {
   "name": "@supersemantics/vsl-langgraph",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "LangGraph.js adapter for VSL (VERBA Specification Language) governance primitives -- TypeScript port of vsl-langgraph, implementing vsl-core's VSLAdapter conformance contract.",
   "license": "MIT",
   "repository": {
