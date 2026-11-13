@@ -97,11 +97,13 @@ accepts any `LedgerStore`, and vsl-corejs includes `InMemoryLedgerStore` and `Js
 
 ## Install
 
-Not yet published to npm.
-
 ```bash
-npm install github:supersemantics/vsl-langgraphjs
+npm install @supersemantics/vsl-langgraph
 ```
+
+This installs `@supersemantics/vsl-core` and `@langchain/langgraph` with it. If your own code also
+imports `@supersemantics/vsl-core`, depend on a compatible version (`^0.2.3`), so npm installs one
+copy: `gatedNode` recognises a denial with `instanceof`.
 
 ## Layout
 
