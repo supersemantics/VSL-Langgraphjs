@@ -2,6 +2,20 @@
 
 What changed in each release, and why. Newest first.
 
+## 0.1.2: published on npm
+
+The first version on npm: `npm install @supersemantics/vsl-langgraph`. The code is unchanged from
+0.1.1.
+
+**Before:** installed from GitHub, with vsl-corejs from a Git URL pinned to `v0.2.0`.
+
+**After:** `@supersemantics/vsl-core` is a normal dependency, `^0.2.3`, resolved from npm;
+`package.json` names the repository and publishes publicly; and a pushed release tag publishes from
+GitHub Actions through npm Trusted Publishing, with provenance (`.github/workflows/publish.yml`).
+
+**Why:** installs from a registry, with a version range npm can share with an application's own
+dependency on vsl-corejs, so there is one copy and `instanceof` works.
+
 ## 0.1.1 (2026-11-12, tag `v0.1.1`): vsl-corejs pinned to v0.2.0
 
 **Before:** `@supersemantics/vsl-core` came from `github:supersemantics/vsl-corejs` with no ref,
