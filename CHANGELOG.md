@@ -2,7 +2,21 @@
 
 What changed in each release, and why. Newest first.
 
-## 0.1.2: published on npm
+## 0.1.3: first release published from GitHub Actions, with provenance
+
+The code is unchanged from 0.1.2.
+
+**Before:** 0.1.2 was published by hand, the first time, because npm can only trust a workflow for a
+package that already exists. It has no provenance.
+
+**After:** this version is built, tested and published by `.github/workflows/publish.yml` when its tag
+is pushed, through npm Trusted Publishing: no token is stored anywhere. npm shows a provenance
+statement linking the package to the exact commit and workflow run that built it.
+
+**Why:** anyone installing the package can check where it came from; and this first publish through
+the workflow confirms the Trusted Publishing connection.
+
+## 0.1.2 (2026-11-13, tag `v0.1.2`): published on npm
 
 The first version on npm: `npm install @supersemantics/vsl-langgraph`. The code is unchanged from
 0.1.1.
