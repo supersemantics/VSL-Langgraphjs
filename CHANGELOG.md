@@ -2,7 +2,7 @@
 
 What changed in each release, and why. Newest first.
 
-## 0.1.3: first release published from GitHub Actions, with provenance
+## 0.1.3 (2026-11-13, tag `v0.1.3`): first release published from GitHub Actions, with provenance
 
 The code is unchanged from 0.1.2.
 
