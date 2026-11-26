@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  AssuranceBasis,
-  F2Modification,
   GammaEstimate,
   Invariant,
   PreNode,
@@ -17,7 +15,6 @@ describe("gatedNode with a PreNode gate", () => {
       name: "confidence",
       description: "x",
       monitor: async (input) => new GammaEstimate({ gammaHat: (input as { confidence: number }).confidence }),
-      assuranceBasis: new AssuranceBasis(true, F2Modification.NONE),
       gammaThreshold: 1.1,
     });
     const gate = adapter.compilePreNode(preNode);
@@ -39,7 +36,6 @@ describe("gatedNode with a PreNode gate", () => {
       name: "confidence",
       description: "x",
       monitor: async (input) => new GammaEstimate({ gammaHat: (input as { confidence: number }).confidence }),
-      assuranceBasis: new AssuranceBasis(true, F2Modification.NONE),
       gammaThreshold: 1.1,
     });
     const gate = adapter.compilePreNode(preNode);
@@ -62,7 +58,6 @@ describe("gatedNode with an Invariant gate", () => {
       name: "hard-cap",
       description: "x",
       rule: async (input) => (input as { amount: number }).amount <= 1000,
-      assuranceBasis: new AssuranceBasis(true, F2Modification.NONE),
     });
     const gate = adapter.compileInvariant(invariant);
 
@@ -81,7 +76,6 @@ describe("gatedNode with an Invariant gate", () => {
       name: "hard-cap",
       description: "x",
       rule: async (input) => (input as { amount: number }).amount <= 1000,
-      assuranceBasis: new AssuranceBasis(true, F2Modification.NONE),
     });
     const gate = adapter.compileInvariant(invariant);
 
@@ -125,7 +119,6 @@ describe("gatedNode candidateInputFn", () => {
         receivedByGate = input;
         return new GammaEstimate({ gammaHat: 2.0 });
       },
-      assuranceBasis: new AssuranceBasis(true, F2Modification.NONE),
     });
     const gate = adapter.compilePreNode(preNode);
 
@@ -156,5 +149,47 @@ describe("gatedNode propagates unexpected errors rather than swallowing them as 
     const wrapped = gatedNode(gate, async () => ({}));
 
     await expect(wrapped({})).rejects.toThrow(TypeError);
+  });
+});
+
+describe("the ledger shows the gate held before the node, through a real StateGraph", () => {
+  it.each([250, 5000])("amount %d: BEFORE_ACTION", async (amount) => {
+    const { Annotation, END, START, StateGraph } = await import("@langchain/langgraph");
+    const { Enforcement, VerbaLedger } = await import("@supersemantics/vsl-core");
+    const ledger = new VerbaLedger();
+
+    const cap = new Invariant({
+      name: "refund-cap",
+      description: "Refunds of 1000 or less.",
+      rule: async (input) => {
+        const allowed = (input as { amount: number }).amount <= 1000;
+        await ledger.writeGateDecision("refund-agent", "refund-cap", { allowed, decisionId: "d1" });
+        return allowed;
+      },
+    });
+    const gate = adapter.compileInvariant(cap);
+
+    const State = Annotation.Root({
+      amount: Annotation<number>(),
+      [DEFAULT_DENIAL_KEY]: Annotation<unknown>({ reducer: (_a, b) => b, default: () => undefined }),
+      refunded: Annotation<boolean | undefined>({ reducer: (_a, b) => b, default: () => undefined }),
+    });
+    const graph = new StateGraph(State)
+      .addNode(
+        "refund",
+        gatedNode(gate, async () => {
+          await ledger.writeAction("refund-agent", "issueRefund", { decisionId: "d1" });
+          return { refunded: true };
+        })
+      )
+      .addNode("blocked", async () => ({}))
+      .addEdge(START, "refund")
+      .addConditionalEdges("refund", routeOnDenial("blocked", END))
+      .addEdge("blocked", END)
+      .compile();
+
+    const result = await graph.invoke({ amount });
+    expect(Boolean(result.refunded)).toBe(amount <= 1000);
+    expect(await ledger.enforcement("d1")).toBe(Enforcement.BEFORE_ACTION);
   });
 });

@@ -17,7 +17,7 @@ TypeScript port of [`vsl-langgraph`](https://github.com/supersemantics/VSL-Langg
 
 ```typescript
 import { StateGraph, START, END, Annotation } from "@langchain/langgraph";
-import { AssuranceBasis, F2Modification, GammaEstimate, PreNode } from "@supersemantics/vsl-core";
+import { GammaEstimate, PreNode } from "@supersemantics/vsl-core";
 import { LangGraphAdapter, gatedNode, routeOnDenial, DEFAULT_DENIAL_KEY } from "@supersemantics/vsl-langgraph";
 
 const State = Annotation.Root({
@@ -30,7 +30,6 @@ const preNode = new PreNode({
   name: "cap-check",
   description: "amount must be under 1000",
   monitor: async (input) => new GammaEstimate({ gammaHat: (input as { amount: number }).amount <= 1000 ? 2.0 : 0.0 }),
-  assuranceBasis: new AssuranceBasis(true, F2Modification.NONE),
 });
 const gate = new LangGraphAdapter().compilePreNode(preNode);
 
@@ -43,33 +42,13 @@ const graph = new StateGraph(State)
   .compile();
 ```
 
-## The F1/F2 assurance distinction -- same caveat as `vsl-core`
+## What a gate reports
 
-Every `PreNode`/`Invariant` here still requires an `AssuranceBasis`, and it's
-still **self-declared, not independently verified**. See `vsl-core`'s README
-("The F1/F2 assurance distinction") for the full explanation.
-
-`LangGraphAdapter` carries one detectable-case check: `compilePreNode`/
-`compileInvariant` emit a `process.emitWarning` (type `VSLGovernanceWarning`)
-if a `monitor`/`rule` claims `F2Modification.FULL` but its own source text
-mentions a hosted model API (`openai`/`anthropic`/`google.genai`/`cohere`/
-`mistralai`) -- a black-box API call structurally cannot modify the energy
-function directly, so `FULL` isn't achievable that way.
-
-**This heuristic is narrower here than in the Python `vsl-langgraph` it was
-ported from.** Python's version additionally walks one level of indirection
-through `fn.__code__.co_names`/`fn.__globals__` to catch a monitor that calls
-a separate helper function which itself reaches a hosted API -- the realistic,
-common shape (a monitor calling a `judgeConfidence()` in another module).
-JavaScript has no equivalent runtime introspection for "what does this
-identifier resolve to from outside a closure" -- replicating that would
-require an AST parser and scope resolution, a real dependency this package
-doesn't take on. **The TS heuristic only catches a hosted-API call written
-directly inside the monitor/rule's own function body** (via
-`Function.prototype.toString()`); a monitor that delegates to a helper
-function is not caught, even if that helper obviously reaches a hosted API.
-Disclosed here and in `adapter.ts`'s own comments, not silently narrowed --
-see `tests/adapter.test.ts`'s "disclosed gap" test for a concrete example.
+Gates take no assurance claim: build a `PreNode` or `Invariant` from its name, description and
+monitor or rule. Whether a gate ran before its node is computed from the ledger, not declared (see
+[vsl-core's "What a gate reports"](https://github.com/supersemantics/VSL-Core#what-a-gate-reports)).
+Code written for 0.1.x that still passes `assuranceBasis` gets one `DeprecationWarning` from
+`@supersemantics/vsl-core`; delete the argument.
 
 ## `gatedNode` doesn't consume `Fallback`
 
@@ -84,7 +63,7 @@ can't be silently assumed.
 Nothing in `gatedNode` calls `VerbaLedger.write*` -- a gate denial becomes a
 state update (`state[denialKey]`), and that's it. If you want an audit
 trail, your own node has to call
-`ledger.writeMonitor`/`ledger.write(LedgerEntryType.PRE_NODE, ...)`/
+`ledger.writeGateDecision`/`ledger.write(LedgerEntryType.PRE_NODE, ...)`/
 `writeVerification` explicitly, causally linked via `causedBy` -- the same
 three entry types the Python `vsl-core` package's own [building
 guide](https://github.com/supersemantics/VSL-Core/blob/main/docs/building-with-vsl-core.md#step-3-the-five-things-youll-actually-write)
@@ -95,6 +74,12 @@ Skip `PRE_NODE` and `VerbaLedger.audit()`'s
 in `audit()`, just an incomplete write. Where those writes are kept is up to you: `VerbaLedger`
 accepts any `LedgerStore`, and vsl-corejs includes `InMemoryLedgerStore` and `JsonlLedgerStore`.
 
+To record the node's side effect itself, call
+`await ledger.writeAction(identityKey, actionName, { decisionId })` inside the wrapped node, with the
+same `decisionId` as the gate's `writeGateDecision`. `await ledger.enforcement(decisionId)` then reads
+`BEFORE_ACTION` when every gate decision came before the node ran (or a denial skipped it), and
+`AFTER_ACTION` when the node ran first.
+
 ## Install
 
 ```bash
@@ -102,7 +87,7 @@ npm install @supersemantics/vsl-langgraph
 ```
 
 This installs `@supersemantics/vsl-core` and `@langchain/langgraph` with it. If your own code also
-imports `@supersemantics/vsl-core`, depend on a compatible version (`^0.2.3`), so npm installs one
+imports `@supersemantics/vsl-core`, depend on a compatible version (`^0.3.0`), so npm installs one
 copy: `gatedNode` recognises a denial with `instanceof`.
 
 ## Layout
@@ -112,15 +97,14 @@ src/
 ├── adapter.ts       LangGraphAdapter (VSLAdapter conformance contract)
 └── integration.ts   gatedNode, routeOnDenial
 tests/
-├── adapter.test.ts       conformance, hosted-API warning (direct + disclosed-gap cases), Fallback warning
+├── adapter.test.ts       gate behavior, no warning without a basis, Fallback warning
 ├── conformance.test.ts   runConformanceSuite(LangGraphAdapter()) == []
-├── integration.test.ts   gatedNode/routeOnDenial, real allow/deny/error-propagation paths
-└── fixtures/             hosted-API-shaped monitor/rule fixtures
+└── integration.test.ts   gatedNode/routeOnDenial, real allow/deny/error-propagation paths, enforcement through a real StateGraph
 ```
 
 ## Status
 
-Alpha. 22 tests pass, 100% statement/branch/function/line coverage on
+Alpha. 19 tests pass, 100% statement/branch/function/line coverage on
 `src/`. Verified against the real `@langchain/langgraph` package (not
 mocks): a real `StateGraph` compiled and run end-to-end, confirming a
 gated node is skipped entirely on denial and the graph routes correctly.

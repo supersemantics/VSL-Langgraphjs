@@ -2,6 +2,20 @@
 
 What changed in each release, and why. Newest first.
 
+## 0.2.0 (unreleased): vsl-corejs 0.3, no F2 claims
+
+**Before:** vsl-langgraph required `@supersemantics/vsl-core` `^0.2.3`, and every gate in the README
+and tests passed an `AssuranceBasis`. `LangGraphAdapter` read a monitor's or rule's source and warned
+(`VSLGovernanceWarning`) when it claimed `F2Modification.FULL` but mentioned a hosted model API.
+
+**After:** `@supersemantics/vsl-core` is `^0.3.0`. Gates are built without an assurance basis, and
+the hosted-API heuristic, its tests and `tests/fixtures/hostedApiMonitor.ts` are removed. The
+warning for a non-default `Fallback` stays. The README's F1/F2 section is now "What a gate reports",
+and the ledger section shows `writeAction()` and `enforcement()`. Code that still passes
+`assuranceBasis` keeps working, with one `DeprecationWarning` from vsl-core.
+
+**Why:** vsl-core no longer takes a declared F2 level; enforcement is computed, not claimed.
+
 ## 0.1.3 (2026-11-13, tag `v0.1.3`): first release published from GitHub Actions, with provenance
 
 The code is unchanged from 0.1.2.
