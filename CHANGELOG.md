@@ -2,7 +2,7 @@
 
 What changed in each release, and why. Newest first.
 
-## 0.2.0 (unreleased): vsl-corejs 0.3, no F2 claims
+## 0.2.0 (2026-11-27, tag `v0.2.0`): vsl-corejs 0.3, no F2 claims
 
 **Before:** vsl-langgraph required `@supersemantics/vsl-core` `^0.2.3`, and every gate in the README
 and tests passed an `AssuranceBasis`. `LangGraphAdapter` read a monitor's or rule's source and warned
